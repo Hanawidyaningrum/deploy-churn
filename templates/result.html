@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hasil Prediksi Churn</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --text:      #5a3a5a;
+      --text-soft: #8a6a8a;
+      --muted:     #b090b0;
+      --card-bg:   rgba(255,255,255,0.75);
+      --border:    rgba(200,150,190,0.22);
+      --border2:   rgba(200,150,190,0.38);
+      --red:       #e8607a;
+      --red-light: rgba(248,182,194,0.35);
+      --red-dark:  #8b2a3a;
+      --green:     #4abf96;
+      --green-light: rgba(180,230,210,0.35);
+      --green-dark:  #1a5a42;
+      --radius:    18px;
+      --radius-sm: 12px;
+    }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      font-size: 15px; line-height: 1.6; color: var(--text);
+      min-height: 100vh; padding: 2rem 1rem 4rem;
+      background:
+        radial-gradient(ellipse 80% 60% at 10% 0%,   rgba(245,224,160,0.55) 0%, transparent 60%),
+        radial-gradient(ellipse 70% 55% at 90% 5%,   rgba(184,216,240,0.50) 0%, transparent 60%),
+        radial-gradient(ellipse 90% 50% at 50% 30%,  rgba(249,184,200,0.65) 0%, transparent 60%),
+        radial-gradient(ellipse 80% 60% at 15% 65%,  rgba(247,203,168,0.55) 0%, transparent 60%),
+        radial-gradient(ellipse 70% 55% at 85% 70%,  rgba(201,184,232,0.60) 0%, transparent 60%),
+        radial-gradient(ellipse 80% 50% at 45% 100%, rgba(184,224,212,0.50) 0%, transparent 60%),
+        linear-gradient(135deg, #fdeef3 0%, #fef3ec 25%, #fdf0f8 50%, #ede8f8 75%, #e8f4f0 100%);
+      background-attachment: fixed;
+    }
+
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background: repeating-linear-gradient(-45deg, transparent, transparent 80px, rgba(255,255,255,0.06) 80px, rgba(255,255,255,0.06) 160px);
+      pointer-events: none; z-index: 0;
+    }
+
+    .page { position: relative; z-index: 1; max-width: 560px; margin: 0 auto; }
+
+    /* ── Header ── */
+    .header { text-align: center; margin-bottom: 1.75rem; animation: fadeUp .5s ease both; }
+    .header-badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: rgba(255,255,255,0.70); backdrop-filter: blur(8px);
+      color: var(--text-soft); border: 1.5px solid var(--border2);
+      border-radius: 99px; padding: 5px 18px;
+      font-size: 12px; font-weight: 700; letter-spacing: .05em; margin-bottom: .9rem;
+    }
+    .dot { width: 7px; height: 7px; background: linear-gradient(135deg, #f9b8c8, #c9b8e8); border-radius: 50%; animation: pulse 2s infinite; }
+    .header h1 { font-size: 26px; font-weight: 800; color: var(--text); }
+    .header p  { color: var(--muted); font-size: 13px; margin-top: 5px; }
+
+    /* ── Result card besar ── */
+    .result-card {
+      background: var(--card-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border: 1.5px solid rgba(255,255,255,0.70); border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 8px 40px rgba(200,150,200,0.15);
+      animation: fadeUp .5s .1s ease both;
+    }
+
+    /* ── Result banner ── */
+    .result-banner {
+      padding: 2.5rem 2rem;
+      text-align: center;
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+    }
+    .result-card.churn .result-banner { background: var(--red-light); }
+    .result-card.stay  .result-banner { background: var(--green-light); }
+    .result-card.error .result-banner { background: rgba(245,224,160,0.35); }
+
+    .result-emoji { font-size: 56px; line-height: 1; }
+
+    .result-status {
+      font-size: 22px; font-weight: 800; letter-spacing: -.01em;
+    }
+    .result-card.churn .result-status { color: var(--red-dark); }
+    .result-card.stay  .result-status { color: var(--green-dark); }
+    .result-card.error .result-status { color: #8a6010; }
+
+    .result-desc { font-size: 14px; color: var(--text-soft); max-width: 360px; }
+
+    /* ── Result body ── */
+    .result-body { padding: 1.5rem 2rem; background: rgba(255,255,255,0.60); }
+
+    /* ── Probability ── */
+    .prob-title {
+      font-size: 11px; font-weight: 800; color: var(--muted);
+      letter-spacing: .08em; text-transform: uppercase; margin-bottom: 12px;
+    }
+    .prob-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .prob-label { font-size: 13px; font-weight: 700; color: var(--text-soft); width: 110px; flex-shrink: 0; }
+    .prob-bar-wrap {
+      flex: 1; background: rgba(200,150,190,0.12);
+      border-radius: 99px; height: 10px; overflow: hidden; border: 1px solid var(--border);
+    }
+    .prob-bar { height: 100%; border-radius: 99px; transition: width .8s cubic-bezier(.4,0,.2,1); }
+    .prob-bar.churn-bar { background: linear-gradient(90deg, #fca5a5, #e8607a); }
+    .prob-bar.stay-bar  { background: linear-gradient(90deg, #6ee7b7, #4abf96); }
+    .prob-val { font-size: 15px; font-weight: 800; width: 50px; text-align: right; font-family: 'DM Mono', monospace; }
+    .prob-val.churn-val { color: var(--red);   }
+    .prob-val.stay-val  { color: var(--green); }
+
+    /* ── Divider ── */
+    .divider { height: 1px; background: var(--border); margin: 1.25rem 0; }
+
+    /* ── Ringkasan input ── */
+    .summary-title {
+      font-size: 11px; font-weight: 800; color: var(--muted);
+      letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px;
+    }
+    .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .summary-item { background: rgba(255,255,255,0.7); border: 1px solid var(--border2); border-radius: 10px; padding: 8px 12px; }
+    .summary-key  { font-size: 11px; font-weight: 700; color: var(--muted); }
+    .summary-val  { font-size: 13px; font-weight: 800; color: var(--text); margin-top: 2px; font-family: 'DM Mono', monospace; }
+
+    /* ── Tips ── */
+    .tips-title { font-size: 11px; font-weight: 800; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; margin-top: 1.25rem; margin-bottom: 8px; }
+    .tips-grid  { display: flex; gap: 8px; flex-wrap: wrap; }
+    .tip {
+      font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 99px;
+      background: rgba(255,255,255,0.75); color: var(--text-soft); border: 1.5px solid var(--border2);
+    }
+
+    /* ── Back button ── */
+    .btn-back {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 13px; margin-top: 1.25rem;
+      background: linear-gradient(135deg, #e8809a 0%, #c878d8 50%, #90a8e8 100%);
+      color: #fff; border: none; border-radius: var(--radius-sm);
+      font-family: inherit; font-size: 15px; font-weight: 800; cursor: pointer;
+      text-decoration: none; letter-spacing: .02em;
+      box-shadow: 0 4px 20px rgba(200,120,216,0.30);
+      transition: opacity .2s, transform .15s;
+      animation: fadeUp .5s .3s ease both;
+    }
+    .btn-back:hover  { opacity: .88; }
+    .btn-back:active { transform: scale(.98); }
+
+    /* ── Info strip ── */
+    .info-strip {
+      margin-top: 1rem; padding: 10px 16px;
+      background: rgba(255,255,255,0.60); backdrop-filter: blur(8px);
+      border: 1.5px solid rgba(255,255,255,0.70); border-radius: var(--radius-sm);
+      font-size: 12px; font-weight: 600; color: var(--text-soft);
+      display: flex; gap: 8px; align-items: center;
+      animation: fadeUp .5s .4s ease both;
+    }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse  { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-badge">
+      <span class="dot"></span> Hasil Prediksi · KNN
+    </div>
+    <h1>📊 Hasil Analisis</h1>
+    <p>Prediksi berdasarkan model KNN dengan akurasi 78.00%</p>
+  </div>
+
+  <!-- Result card -->
+  <div class="result-card {% if warna == 'red' %}churn{% elif warna == 'green' %}stay{% else %}error{% endif %}">
+
+    <!-- Banner -->
+    <div class="result-banner">
+      <div class="result-emoji">
+        {% if warna == 'red' %}⚠️{% elif warna == 'green' %}✅{% else %}❌{% endif %}
+      </div>
+      <div class="result-status">{{ prediction }}</div>
+      <div class="result-desc">
+        {% if warna == 'red' %}
+          Pelanggan ini diprediksi akan berhenti berlangganan. Segera lakukan tindakan retensi untuk mencegah churn.
+        {% elif warna == 'green' %}
+          Pelanggan ini diprediksi akan tetap berlangganan. Manfaatkan peluang ini untuk meningkatkan layanan.
+        {% else %}
+          Terjadi kesalahan saat memproses prediksi. Silakan coba lagi.
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="result-body">
+
+      <!-- Probability bars -->
+      {% if prob_churn is not none and prob_stay is not none %}
+      <div class="prob-title">Tingkat Keyakinan Model</div>
+      <div class="prob-row">
+        <div class="prob-label">Peluang Churn</div>
+        <div class="prob-bar-wrap">
+          <div class="prob-bar churn-bar" style="width: {{ prob_churn }}%"></div>
+        </div>
+        <div class="prob-val churn-val">{{ prob_churn }}%</div>
+      </div>
+      <div class="prob-row">
+        <div class="prob-label">Peluang Stay</div>
+        <div class="prob-bar-wrap">
+          <div class="prob-bar stay-bar" style="width: {{ prob_stay }}%"></div>
+        </div>
+        <div class="prob-val stay-val">{{ prob_stay }}%</div>
+      </div>
+      {% endif %}
+
+      <!-- Ringkasan input -->
+      {% if inputs %}
+      <div class="divider"></div>
+      <div class="summary-title">Ringkasan Data Input</div>
+      <div class="summary-grid">
+        <div class="summary-item">
+          <div class="summary-key">Senior Citizen</div>
+          <div class="summary-val">{% if inputs.SeniorCitizen == '1' %}Ya{% else %}Tidak{% endif %}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-key">Tenure</div>
+          <div class="summary-val">{{ inputs.tenure }} bulan</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-key">Internet Service</div>
+          <div class="summary-val">{% if inputs.InternetService == '0' %}DSL{% elif inputs.InternetService == '1' %}Fiber Optic{% else %}Tidak Ada{% endif %}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-key">Contract</div>
+          <div class="summary-val">{% if inputs.Contract == '0' %}Month-to-Month{% elif inputs.Contract == '1' %}One Year{% else %}Two Year{% endif %}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-key">Monthly Charges</div>
+          <div class="summary-val">$ {{ inputs.MonthlyCharges }}</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-key">Total Charges</div>
+          <div class="summary-val">$ {{ inputs.TotalCharges }}</div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Tips -->
+      {% if warna == 'red' %}
+      <div class="tips-title">Rekomendasi Aksi</div>
+      <div class="tips-grid">
+        <span class="tip">📋 Tawarkan upgrade kontrak</span>
+        <span class="tip">🛡️ Aktifkan Online Security</span>
+        <span class="tip">🎁 Berikan loyalty reward</span>
+        <span class="tip">📞 Hubungi tim retensi</span>
+      </div>
+      {% elif warna == 'green' %}
+      <div class="tips-title">Peluang Upsell</div>
+      <div class="tips-grid">
+        <span class="tip">⭐ Pertahankan kualitas layanan</span>
+        <span class="tip">📈 Tawarkan paket premium</span>
+        <span class="tip">👥 Program referral</span>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+  <!-- Tombol kembali ke form -->
+  <a href="/" class="btn-back">🔍 Prediksi Pelanggan Lain</a>
+
+  <div class="info-strip">
+    🎨
+    <span>
+      Model: <strong>KNN (K-Nearest Neighbor)</strong> &bull;
+      Dataset: <strong>Telco Customer Churn</strong> &bull;
+      Akurasi: <strong>78.00%</strong>
+    </span>
+  </div>
+
+</div>
+</body>
+</html>

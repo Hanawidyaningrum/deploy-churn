@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prediksi Churn Pelanggan Telco</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --text:      #5a3a5a;
+      --text-soft: #8a6a8a;
+      --muted:     #b090b0;
+      --card-bg:   rgba(255,255,255,0.72);
+      --input-bg:  rgba(255,255,255,0.85);
+      --border:    rgba(200,150,190,0.22);
+      --border2:   rgba(200,150,190,0.38);
+      --radius:    18px;
+      --radius-sm: 12px;
+    }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem 1rem 4rem;
+      background:
+        radial-gradient(ellipse 80% 60% at 10% 0%,   rgba(245,224,160,0.55) 0%, transparent 60%),
+        radial-gradient(ellipse 70% 55% at 90% 5%,   rgba(184,216,240,0.50) 0%, transparent 60%),
+        radial-gradient(ellipse 90% 50% at 50% 30%,  rgba(249,184,200,0.65) 0%, transparent 60%),
+        radial-gradient(ellipse 80% 60% at 15% 65%,  rgba(247,203,168,0.55) 0%, transparent 60%),
+        radial-gradient(ellipse 70% 55% at 85% 70%,  rgba(201,184,232,0.60) 0%, transparent 60%),
+        radial-gradient(ellipse 80% 50% at 45% 100%, rgba(184,224,212,0.50) 0%, transparent 60%),
+        linear-gradient(135deg, #fdeef3 0%, #fef3ec 25%, #fdf0f8 50%, #ede8f8 75%, #e8f4f0 100%);
+      background-attachment: fixed;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        -45deg, transparent, transparent 80px,
+        rgba(255,255,255,0.06) 80px, rgba(255,255,255,0.06) 160px
+      );
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page { position: relative; z-index: 1; max-width: 680px; margin: 0 auto; }
+
+    /* ── Header ── */
+    .header { text-align: center; margin-bottom: 1.75rem; animation: fadeUp .5s ease both; }
+    .header-badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: rgba(255,255,255,0.70); backdrop-filter: blur(8px);
+      color: var(--text-soft); border: 1.5px solid var(--border2);
+      border-radius: 99px; padding: 5px 18px;
+      font-size: 12px; font-weight: 700; letter-spacing: .05em;
+      margin-bottom: .9rem;
+      box-shadow: 0 2px 12px rgba(200,150,190,0.12);
+    }
+    .dot { width: 7px; height: 7px; background: linear-gradient(135deg, #f9b8c8, #c9b8e8); border-radius: 50%; animation: pulse 2s infinite; }
+    .header h1 { font-size: 28px; font-weight: 800; color: var(--text); letter-spacing: -.02em; }
+    .header h1 span { background: linear-gradient(135deg, #d4608a, #9060c8, #60a890); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .header p { color: var(--muted); font-size: 14px; margin-top: 5px; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--card-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border: 1.5px solid rgba(255,255,255,0.70); border-radius: var(--radius);
+      padding: 1.75rem;
+      box-shadow: 0 4px 32px rgba(200,150,200,0.12), 0 1px 0 rgba(255,255,255,0.8) inset;
+      animation: fadeUp .5s .1s ease both;
+    }
+
+    /* ── Section label ── */
+    .section-label {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 11px; font-weight: 800; letter-spacing: .10em; text-transform: uppercase;
+      color: var(--text-soft); margin: 1.5rem 0 .875rem;
+    }
+    .section-label .dot-label { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .sl-profile  .dot-label { background: #f7cba8; }
+    .sl-internet .dot-label { background: #b8e0d4; }
+    .sl-contract .dot-label { background: #c9b8e8; }
+    .sl-tagihan  .dot-label { background: #f9b8c8; }
+    .section-label::after { content: ''; flex: 1; height: 1.5px; border-radius: 99px; background: linear-gradient(90deg, var(--border2), transparent); }
+    .section-label:first-of-type { margin-top: 0; }
+
+    /* ── Grid ── */
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media(max-width:480px) { .grid2 { grid-template-columns: 1fr; } }
+
+    /* ── Field ── */
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label { font-size: 12px; font-weight: 700; color: var(--text-soft); letter-spacing: .02em; }
+    .field select, .field input {
+      background: var(--input-bg); border: 1.5px solid var(--border2); border-radius: var(--radius-sm);
+      color: var(--text); font-family: inherit; font-size: 14px; font-weight: 600;
+      padding: 9px 12px; outline: none; transition: border-color .2s, box-shadow .2s;
+      width: 100%; appearance: none; -webkit-appearance: none;
+      box-shadow: 0 1px 4px rgba(200,150,190,0.08);
+    }
+    .field select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23b090b0' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;
+    }
+    .field select:focus, .field input:focus { border-color: #f9b8c8; box-shadow: 0 0 0 3px rgba(249,184,200,0.25); }
+    .field input::placeholder { color: var(--muted); opacity: .6; }
+
+    /* ── Button ── */
+    .btn {
+      width: 100%; padding: 13px; margin-top: 1.5rem;
+      background: linear-gradient(135deg, #e8809a 0%, #c878d8 50%, #90a8e8 100%);
+      color: #fff; border: none; border-radius: var(--radius-sm);
+      font-family: inherit; font-size: 15px; font-weight: 800; cursor: pointer;
+      letter-spacing: .02em; transition: opacity .2s, transform .15s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      box-shadow: 0 4px 20px rgba(200,120,216,0.30);
+    }
+    .btn:hover { opacity: .88; }
+    .btn:active { transform: scale(.98); }
+
+    /* ── Info strip ── */
+    .info-strip {
+      margin-top: 1.25rem; padding: 10px 16px;
+      background: rgba(255,255,255,0.60); backdrop-filter: blur(8px);
+      border: 1.5px solid rgba(255,255,255,0.70); border-radius: var(--radius-sm);
+      font-size: 12px; font-weight: 600; color: var(--text-soft);
+      display: flex; gap: 8px; align-items: center;
+      box-shadow: 0 2px 12px rgba(200,150,190,0.08);
+      animation: fadeUp .5s .2s ease both;
+    }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse  { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="header-badge">
+      <span class="dot"></span> KNN · Telco Customer Churn
+    </div>
+    <h1>🔍 Prediksi <span>Churn Pelanggan</span></h1>
+    <p>Masukkan data pelanggan untuk memprediksi kemungkinan berhenti berlangganan</p>
+  </div>
+
+  <div class="card">
+    <form action="/predict" method="POST">
+
+      <div class="section-label sl-profile">
+        <span class="dot-label"></span> Profil pelanggan
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label>Senior Citizen</label>
+          <select name="SeniorCitizen">
+            <option value="0">Tidak (0)</option>
+            <option value="1">Ya (1)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Tenure (bulan berlangganan)</label>
+          <input type="number" name="tenure" placeholder="Contoh: 12" min="0" required>
+        </div>
+      </div>
+
+      <div class="section-label sl-internet">
+        <span class="dot-label"></span> Layanan internet
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label>Internet Service</label>
+          <select name="InternetService">
+            <option value="0">DSL (0)</option>
+            <option value="1">Fiber Optic (1)</option>
+            <option value="2">Tidak Ada (2)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Online Security</label>
+          <select name="OnlineSecurity">
+            <option value="0">Tidak (0)</option>
+            <option value="1">Ya (1)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section-label sl-contract">
+        <span class="dot-label"></span> Kontrak &amp; pembayaran
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label>Tech Support</label>
+          <select name="TechSupport">
+            <option value="0">Tidak (0)</option>
+            <option value="1">Ya (1)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Contract</label>
+          <select name="Contract">
+            <option value="0">Month-to-Month (0)</option>
+            <option value="1">One Year (1)</option>
+            <option value="2">Two Year (2)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Paperless Billing</label>
+          <select name="PaperlessBilling">
+            <option value="0">Tidak (0)</option>
+            <option value="1">Ya (1)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Payment Method</label>
+          <select name="PaymentMethod">
+            <option value="0">Bank Transfer (0)</option>
+            <option value="1">Credit Card (1)</option>
+            <option value="2">Electronic Check (2)</option>
+            <option value="3">Mailed Check (3)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section-label sl-tagihan">
+        <span class="dot-label"></span> Tagihan
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label>Monthly Charges (USD/bulan)</label>
+          <input type="number" name="MonthlyCharges" placeholder="Contoh: 65.5" step="0.01" required>
+        </div>
+        <div class="field">
+          <label>Total Charges (USD keseluruhan)</label>
+          <input type="number" name="TotalCharges" placeholder="Contoh: 786.0" step="0.01" required>
+        </div>
+      </div>
+
+      <button class="btn" type="submit">🔮 Prediksi Sekarang</button>
+    </form>
+  </div>
+
+  <div class="info-strip">
+    🎨
+    <span>
+      Model: <strong>KNN (K-Nearest Neighbor)</strong> &bull;
+      Dataset: <strong>Telco Customer Churn</strong> &bull;
+      Akurasi: <strong>78.00%</strong>
+    </span>
+  </div>
+
+</div>
+</body>
+</html>
